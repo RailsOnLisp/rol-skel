@@ -2,24 +2,45 @@
 
 set -e
 
+DIR="$PWD"
 NAME="$1"
 
-mkdir -p "$NAME"
-cd "$NAME"
+cd "$(dirname "$0")"
+cd ..
+ROL_DIR="$PWD"
+cd skel
+ROL_SKEL_DIR="$PWD"
+
+mkdir -p "$DIR/$NAME"
+cd "$DIR/$NAME"
 DIR="$PWD"
 
-cd "$(dirname "$0")/../../rol"
-ROL_DIR="$PWD"
-
 VARS=""
-VARS="$VARS -e s/@{NAME}/$NAME/g"
-VARS="$VARS -e s/@{ROL_DIR}/$ROL_DIR/g"
+VARS="$VARS -e s:@{NAME}:$NAME:g"
+VARS="$VARS -e s:@{ROL_DIR}:$ROL_DIR:g"
 
-cd "$(dirname "$0")/../skel"
+cd "$ROL_SKEL_DIR/skel"
 find | while read SKEL; do
     if [ -d "$SKEL" ]; then
         echo "D $SKEL"
-        mkdir "$DIR/$SKEL"
+        mkdir -p "$DIR/$SKEL"
     elif [ -f "$SKEL" ]; then
         echo "F $SKEL"
-        sed $VARS 
+        sed $VARS < "$SKEL" > "$DIR/$SKEL.tmp"
+        if [ -f "$DIR/$SKEL" ]; then
+            if cmp "$DIR/$SKEL.tmp" "$DIR/$SKEL"; then
+                rm "$DIR/$SKEL.tmp"
+            else
+                diff -u "$DIR/$SKEL" "$DIR/$SKEL.tmp"
+            fi
+        else
+            mv "$DIR/$SKEL.tmp" "$DIR/$SKEL"
+        fi
+    elif [ -h "$SKEL" ]; then
+        TARGET="$(readlink "$SKEL" | sed $VARS)"
+        echo "L $SKEL -> $TARGET"
+        ln -s "$TARGET" "$DIR/$SKEL"
+    else
+        echo "? $SKEL"
+    fi
+done
