@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -e
+
+NAME="$1"
+
+mkdir -p "$NAME"
+cd "$NAME"
+DIR="$PWD"
+
+cd "$(dirname "$0")/../../rol"
+ROL_DIR="$PWD"
+
+VARS=""
+VARS="$VARS -e s/@{NAME}/$NAME/g"
+VARS="$VARS -e s/@{ROL_DIR}/$ROL_DIR/g"
+
+cd "$(dirname "$0")/../skel"
+find | while read SKEL; do
+    if [ -d "$SKEL" ]; then
+        echo "D $SKEL"
+        mkdir "$DIR/$SKEL"
+    elif [ -f "$SKEL" ]; then
+        echo "F $SKEL"
+        sed $VARS 
