@@ -14,6 +14,7 @@ ROL_SKEL_DIR="$PWD"
 mkdir -p "$DIR/$NAME"
 cd "$DIR/$NAME"
 DIR="$PWD"
+echo "Creating $NAME"
 
 VARS=""
 VARS="$VARS -e s:@{NAME}:$NAME:g"
@@ -25,21 +26,22 @@ find | while read SKEL; do
         echo "D $SKEL"
         mkdir -p "$DIR/$SKEL"
     elif [ -f "$SKEL" ]; then
-        echo "F $SKEL"
-        sed $VARS < "$SKEL" > "$DIR/$SKEL.tmp"
-        if [ -f "$DIR/$SKEL" ]; then
-            if cmp "$DIR/$SKEL.tmp" "$DIR/$SKEL"; then
-                rm "$DIR/$SKEL.tmp"
+        TARGET="$(echo "$SKEL" | sed $VARS)"
+        echo "F $TARGET"
+        sed $VARS < "$SKEL" > "$DIR/$TARGET.tmp"
+        if [ -f "$DIR/$TARGET" ]; then
+            if cmp "$DIR/$TARGET" "$DIR/$TARGET.tmp"; then
+                rm "$DIR/$TARGET.tmp"
             else
-                diff -u "$DIR/$SKEL" "$DIR/$SKEL.tmp"
+                diff -u "$DIR/$TARGET" "$DIR/$TARGET.tmp"
             fi
         else
-            mv "$DIR/$SKEL.tmp" "$DIR/$SKEL"
+            mv "$DIR/$TARGET.tmp" "$DIR/$TARGET"
         fi
     elif [ -h "$SKEL" ]; then
         TARGET="$(readlink "$SKEL" | sed $VARS)"
         echo "L $SKEL -> $TARGET"
-        ln -s "$TARGET" "$DIR/$SKEL"
+        ln -sf "$TARGET" "$DIR/$SKEL"
     else
         echo "? $SKEL"
     fi
